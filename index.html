@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nhóm 17</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+</head>
+
+<body>
+    <h1 class="text-center bg-warning">Quản lý sinh viên</h1>
+    <h4 class="text-center bg-secondary">Danh sách thành viên</h4>
+    <table class="table table-striped">
+        <tr>
+            <td>Trương Lý Quốc Toàn</td>
+            <td>DH52201595</td>
+        </tr>
+        <tr>
+            <td>Tạ Thanh Tấn</td>
+            <td>DH52201416</td>
+        </tr>
+        <tr>
+            <td>Trương Đàm Công Quý</td>
+            <td>DH52201336</td>
+        </tr>
+        <tr>
+            <td>Trương Nguyễn Tường Vy</td>
+            <td>DH52201788</td>
+        </tr>
+        <tr>
+            <td>Trần Võ Thúy Vy</td>
+            <td>DH52201787</td>
+        </tr>
+        <tr>
+            <td>Huỳnh Lê Thu Hương</td>
+            <td>DH52200755</td>
+        </tr>
+    </table>
+    <div class="container mt-4">
+
+        <h3>Danh sách sinh viên</h3>
+
+        <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#studentModal">
+            Thêm sinh viên
+        </button>
+
+        <table class="table table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Avatar</th>
+                    <th>Tên</th>
+                    <th>SĐT</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody id="studentTable"></tbody>
+        </table>
+
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="studentModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+                <form id="studentForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Thêm sinh viên</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <div class="mb-3">
+                            <label class="form-label">Tên sinh viên</label>
+                            <input type="text" id="ten" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">SĐT</label>
+                            <input type="text" id="sdt" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Link Avatar</label>
+                            <input type="url" id="avatar" class="form-control">
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-success">Lưu</button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+        
+            const API_URL = "https://69844d66885008c00db0a9b9.mockapi.io/api/nhom17/sinhvien";
+        
+            let editId = null; // lưu id đang sửa
+        
+            function loadStudents() {
+                fetch(API_URL)
+                    .then(res => res.json())
+                    .then(data => {
+                        let html = "";
+                        data.forEach((sv, index) => {
+                            html += `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td><img src="${sv.avatar}" width="60"></td>
+                                <td>${sv.name}</td>
+                                <td>${sv.phone}</td>
+                                <td>
+                                    <button class="btn btn-warning btn-sm" onclick="editStudent('${sv.id}','${sv.name}','${sv.phone}','${sv.avatar}')">Sửa</button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteStudent('${sv.id}')">Xóa</button>
+                                </td>
+                            </tr>
+                            `;
+                        });
+                        document.getElementById("studentTable").innerHTML = html;
+                    });
+            }
+        
+            // THÊM hoặc CẬP NHẬT
+            document.getElementById("studentForm").addEventListener("submit", function (e) {
+                e.preventDefault();
+        
+                const data = {
+                    name: document.getElementById("ten").value,
+                    phone: document.getElementById("sdt").value,
+                    avatar: document.getElementById("avatar").value
+                };
+        
+                // Nếu đang sửa → PUT
+                if (editId) {
+                    fetch(API_URL + "/" + editId, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(data)
+                    }).then(() => {
+                        loadStudents();
+                        document.getElementById("studentForm").reset();
+                        editId = null;
+                        bootstrap.Modal.getInstance(document.getElementById('studentModal')).hide();
+                    });
+        
+                } else { // Nếu thêm mới → POST
+                    fetch(API_URL, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(data)
+                    }).then(() => {
+                        loadStudents();
+                        document.getElementById("studentForm").reset();
+                        bootstrap.Modal.getInstance(document.getElementById('studentModal')).hide();
+                    });
+                }
+            });
+        
+            // XÓA
+            window.deleteStudent = function (id) {
+                if (confirm("Bạn có chắc muốn xóa không?")) {
+                    fetch(API_URL + "/" + id, {
+                        method: "DELETE"
+                    }).then(() => loadStudents());
+                }
+            };
+        
+            // SỬA
+            window.editStudent = function (id, name, phone, avatar) {
+        
+                editId = id;
+        
+                document.getElementById("ten").value = name;
+                document.getElementById("sdt").value = phone;
+                document.getElementById("avatar").value = avatar;
+        
+                const modal = new bootstrap.Modal(document.getElementById('studentModal'));
+                modal.show();
+            };
+        
+            loadStudents();
+        });
+        </script>
+        
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous">
+    </script>
+</body>
+
+</html>
